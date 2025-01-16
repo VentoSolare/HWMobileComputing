@@ -207,6 +207,22 @@ object SampleData {
             "Lexi",
             "Have you tried writing build.gradle with KTS?"
         ),
+        Message(
+            author = "Lexi",
+            body = "Adding an extra message to demonstrate scrollability"
+        ),
+        Message(
+            author = "Lexi",
+            body = "Yet another one to add..."
+        ),
+        Message(
+            author = "Lexi",
+            body = "And another one..."
+        ),
+        Message(
+            author = "Lexi",
+            body = "This is the last one, at least for now..."
+        )
     )
 }
 
