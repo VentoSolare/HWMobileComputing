@@ -18,14 +18,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -33,17 +28,13 @@ import androidx.compose. runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.composetutorial.ui.theme.ComposeTutorialTheme
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Serializer
 
 
 class MainActivity : ComponentActivity() {
@@ -84,85 +75,6 @@ fun Navigation() {
         composable(View.SecondaryView.route) { SecondaryView(navController) }
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainView(navController : NavHostController) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Row{} },
-                actions = {
-                    Button(
-                        onClick = {
-                            navController.navigate(View.SecondaryView.route) {
-                                popUpTo(View.MainView.route) { inclusive = false }
-                            }
-                        },
-                        modifier = Modifier
-                            .height(42.dp)
-                            .padding(end = 10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Black
-                        )
-
-                    ) {
-                        Text("Second view")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            //var index = 1
-            Conversation(SampleData.conversationSample)
-            /*LazyColumn {
-                items(SampleData.conversationSample) { message ->
-                    MessageCard(message, index)
-                    index++
-                }
-            }*/
-        }
-    }
-}
-
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SecondaryView(navController: NavHostController) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                navigationIcon = {
-                    Button(
-                        onClick = {
-                            navController.navigate(View.MainView.route) {
-                                popUpTo(View.MainView.route) { inclusive = true }
-                            }
-                        },
-                        modifier = Modifier
-                            .height(42.dp)
-                            .padding(start = 10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Black
-                        )
-                    ) {
-                        Text("Back")
-                    }
-                },
-                title = { Row {} }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            MessageCard(Message(author = "Lexi", body = "Hello, this is the second view"),1)
-        }
-    }
-
-}
-
-
 
 
 @Composable
