@@ -26,8 +26,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose. runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -35,6 +37,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.composetutorial.ui.theme.ComposeTutorialTheme
+import coil3.compose.rememberAsyncImagePainter
 
 
 class MainActivity : ComponentActivity() {
@@ -51,6 +54,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 //@Serializable
 sealed class View(val route: String) {
     //@Serializable
@@ -79,15 +83,16 @@ fun Navigation() {
 
 @Composable
 fun MessageCard(msg : Message, index: Int) {
-    val picture = if (index % 2 == 0 ) {
-        R.drawable.hw1pic2
-    } else {
-        R.drawable.hw1pic1
-    }
         Row(modifier = Modifier.padding(all = 8.dp)) {
+            val context = LocalContext.current
+            val imageUri = loadImageUri(context)
             Image(
-                painter = painterResource(picture),
-                null,
+                painter = if(imageUri != null) {
+                    rememberAsyncImagePainter(imageUri)
+                } else {
+                    painterResource(R.drawable.ic_launcher_foreground)
+                },
+                contentDescription = "Profile picture",
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
@@ -163,94 +168,42 @@ fun Conversation(messages: List<Message>) {
 @Preview
 @Composable
 fun PreviewConversation() {
+    val context = LocalContext.current
+    val username = remember { mutableStateOf(loadUsername(context)) }
+    val authorName = username.value
     ComposeTutorialTheme {
-        Conversation(SampleData.conversationSample)
+        Conversation(SampleData.conversationSample(authorName))
     }
 }
 object SampleData {
     // Sample conversation data
-    val conversationSample = listOf(
-        Message(
-            "Lexi",
-            "Test...Test...Test..."
-        ),
-        Message(
-            "Lexi",
-            """List of Android versions:
-            |Android KitKat (API 19)
-            |Android Lollipop (API 21)
-            |Android Marshmallow (API 23)
-            |Android Nougat (API 24)
-            |Android Oreo (API 26)
-            |Android Pie (API 28)
-            |Android 10 (API 29)
-            |Android 11 (API 30)
-            |Android 12 (API 31)""".trim()
-        ),
-        Message(
-            "Lexi",
-            """I think Kotlin is my favorite programming language.
-            |It's so much fun!""".trim()
-        ),
-        Message(
-            "Lexi",
-            "Searching for alternatives to XML layouts..."
-        ),
-        Message(
-            "Lexi",
-            """Hey, take a look at Jetpack Compose, it's great!
-            |It's the Android's modern toolkit for building native UI.
-            |It simplifies and accelerates UI development on Android.
-            |Less code, powerful tools, and intuitive Kotlin APIs :)""".trim()
-        ),
-        Message(
-            "Lexi",
-            "It's available from API 21+ :)"
-        ),
-        Message(
-            "Lexi",
-            "Writing Kotlin for UI seems so natural, Compose where have you been all my life?"
-        ),
-        Message(
-            "Lexi",
-            "Android Studio next version's name is Arctic Fox"
-        ),
-        Message(
-            "Lexi",
-            "Android Studio Arctic Fox tooling for Compose is top notch ^_^"
-        ),
-        Message(
-            "Lexi",
-            "I didn't know you can now run the emulator directly from Android Studio"
-        ),
-        Message(
-            "Lexi",
-            "Compose Previews are great to check quickly how a composable layout looks like"
-        ),
-        Message(
-            "Lexi",
-            "Previews are also interactive after enabling the experimental setting"
-        ),
-        Message(
-            "Lexi",
-            "Have you tried writing build.gradle with KTS?"
-        ),
-        Message(
-            author = "Lexi",
-            body = "Adding an extra message to demonstrate scrolla  bility"
-        ),
-        Message(
-            author = "Lexi",
-            body = "Yet another one to add..."
-        ),
-        Message(
-            author = "Lexi",
-            body = "And another one..."
-        ),
-        Message(
-            author = "Lexi",
-            body = "This is the last one, at least for now..."
+    fun conversationSample(username: String) : List<Message> {
+        return listOf(
+            Message(username, "Test...Test...Test..."),
+            Message(username, """List of Android versions:
+                |Android KitKat (API 19)
+                |Android Lollipop (API 21)
+                |Android Marshmallow (API 23)
+                |Android Nougat (API 24)
+                |Android Oreo (API 26)
+                |Android Pie (API 28)
+                |Android 10 (API 29)
+                |Android 11 (API 30)
+                |Android 12 (API 31)""".trim()),
+            Message(username, "Hey, take a look at Jetpack Compose, it's great!"),
+            Message(username, "It's available from API 21+ :)"),
+            Message(username,"Writing Kotlin for UI seems so natural, Compose where have you been all my life?" ),
+            Message(username, "Android Studio next version's name is Arctic Fox"),
+            Message(username, "Android Studio Arctic Fox tooling for Compose is top notch ^_^"),
+            Message(username, "I didn't know you can now run the emulator directly from Android Studio"),
+            Message(username, "Compose Previews are great to check quickly how a composable layout looks like"),
+            Message(username, "Previews are also interactive after enabling the experimental setting"),
+            Message(username, "Have you tried writing build.gradle with KTS?"),
+            Message(username, "Adding an extra message to demonstrate scrollability"),
+            Message(username, "Yet another one to add..."),
+            Message(username, "And another one..."),
+            Message(username, "This is the last one, at least for now...")
         )
-    )
+    }
 }
 
