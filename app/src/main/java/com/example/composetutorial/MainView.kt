@@ -46,7 +46,7 @@ fun MainView(navController : NavHostController) {
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             //var index = 1
-            Conversation(SampleData.conversationSample)
+            PreviewConversation()
             /*LazyColumn {
                 items(SampleData.conversationSample) { message ->
                     MessageCard(message, index)
