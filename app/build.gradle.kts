@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.composetutorial"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.composetutorial"
-        minSdk = 24
-        targetSdk = 34
+        minSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -42,6 +42,10 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation.dynamic.feature)
+    implementation(libs.androidx.navigation.fragment)
+    implementation(libs.androidx.navigation.ui)
     implementation(libs.coil.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -59,9 +63,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    val nav_version = "2.8.5"
     // Jetpack Compose integration
-    implementation(libs.androidx.navigation.compose.v276)
+    implementation(libs.androidx.navigation.compose)
 
     //implementation(libs.androidx.navigation.compose)
 
@@ -70,7 +73,7 @@ dependencies {
     implementation(libs.androidx.navigation.ui)
 
     // Feature module support for Fragments
-    implementation(libs.androidx.navigation.dynamic.features.fragment)
+    implementation(libs.androidx.navigation.dynamic.feature)
 
     // Testing Navigation
     androidTestImplementation(libs.androidx.navigation.testing)
