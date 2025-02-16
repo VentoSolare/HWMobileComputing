@@ -18,7 +18,7 @@ import androidx.navigation.NavHostController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainView(navController : NavHostController) {
+fun MainView(navController: NavHostController) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -45,14 +45,7 @@ fun MainView(navController : NavHostController) {
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            //var index = 1
             PreviewConversation()
-            /*LazyColumn {
-                items(SampleData.conversationSample) { message ->
-                    MessageCard(message, index)
-                    index++
-                }
-            }*/
         }
     }
 }
