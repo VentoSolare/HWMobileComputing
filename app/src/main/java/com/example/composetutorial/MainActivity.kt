@@ -1,6 +1,5 @@
 package com.example.composetutorial
 
-import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,33 +7,45 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
@@ -42,7 +53,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.composetutorial.ui.theme.ComposeTutorialTheme
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,26 +65,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//@Serializable
-sealed class View(val route: String) {
-    //@Serializable
-    data object MainView : View("main_view")
-
-    /*@Serializable
-    data object SecondaryView(val message: String) : View("secondary_view?message={message}") {
-        fun createRoute(message: String) = "secondary_view?message=$message"
-    }*/
-    data object SecondaryView : View("secondary_view")
-}
-
-data class Message(val author: String, val body: String)
-
 @Composable
 fun Navigation() {
     val navController = rememberNavController()
     NavHost(
-        navController = navController,
-        startDestination = View.MainView.route
+        navController = navController, startDestination = View.MainView.route
     ) {
         composable(View.MainView.route) { MainView(navController) }
         composable(View.SecondaryView.route) { SecondaryView(navController) }
@@ -82,14 +77,29 @@ fun Navigation() {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MessageCard(msg: Message) {
-    Row(modifier = Modifier.padding(all = 8.dp)) {
+fun MessageCard(msg: Messages, deleteMessage: (Int) -> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(false) }
+
+    val surfaceColor by animateColorAsState(
+        if (isExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        label = ""
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(all = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         val context = LocalContext.current
         val imageUri = loadImageUri(context)
+        val author = loadUsername(context)
+
         Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
+            contentAlignment = Alignment.Center, modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
         ) {
@@ -109,16 +119,12 @@ fun MessageCard(msg: Message) {
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        var isExpanded by remember { mutableStateOf(false) }
-
-        val surfaceColor by animateColorAsState(
-            if (isExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-            label = ""
-        )
-
-        Column(modifier = Modifier.clickable { isExpanded = !isExpanded }) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable { isExpanded = !isExpanded }) {
             Text(
-                text = msg.author,
+                text = author,
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleSmall
             )
@@ -141,95 +147,100 @@ fun MessageCard(msg: Message) {
                 )
             }
         }
+
+        IconButton(
+            onClick = { showDialog = true }, modifier = Modifier.align(Alignment.Top)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete Message",
+                tint = Color.Black
+            )
+        }
     }
 
-}
+    if (showDialog) {
+        BasicAlertDialog(
+            onDismissRequest = { showDialog = false }) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 6.dp,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Delete Message",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Medium
+                    )
 
-@Preview(name = "Light Mode")
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true,
-    name = "Dark Mode"
-)
-@Composable
-fun PreviewMessageCard() {
-    ComposeTutorialTheme {
-        Surface {
-            MessageCard(
-                msg = Message("Lexi", "Hello world and something"),
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                )
+                    Text(
+                        text = "Are you sure you want to delete this message? You will not be able to get it back after deleting it.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TextButton(
+                            onClick = { showDialog = false },
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                        ) {
+                            Text("Cancel", fontWeight = FontWeight.Medium)
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(
+                            onClick = {
+                                deleteMessage(msg.id)
+                                showDialog = false
+                            }, colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                        ) {
+                            Text("Delete", fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
+
 @Composable
-fun Conversation(messages: List<Message>) {
-    LazyColumn {
-        items(messages) { message ->
-            MessageCard(
-                message,
+fun Conversation(messages: List<Messages>, deleteMessage: (Int) -> Unit) {
+    if (messages.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .offset(y = (-50).dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No previous messages",
+                color = Color.Gray,
+                fontSize = 20.sp,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+    } else {
+        LazyColumn {
+            items(messages) { message ->
+                MessageCard(
+                    msg = message, deleteMessage = deleteMessage
 
                 )
 
+            }
         }
     }
-}
 
-@Preview
-@Composable
-fun PreviewConversation() {
-    val context = LocalContext.current
-    val username = remember { mutableStateOf(loadUsername(context)) }
-    val authorName = username.value
-    ComposeTutorialTheme {
-        Conversation(SampleData.conversationSample(authorName))
-    }
 }
-
-object SampleData {
-    // Sample conversation data
-    fun conversationSample(username: String): List<Message> {
-        return listOf(
-            Message(username, "Test...Test...Test..."),
-            Message(
-                username, """List of Android versions:
-                |Android KitKat (API 19)
-                |Android Lollipop (API 21)
-                |Android Marshmallow (API 23)
-                |Android Nougat (API 24)
-                |Android Oreo (API 26)
-                |Android Pie (API 28)
-                |Android 10 (API 29)
-                |Android 11 (API 30)
-                |Android 12 (API 31)""".trim()
-            ),
-            Message(username, "Hey, take a look at Jetpack Compose, it's great!"),
-            Message(username, "It's available from API 21+ :)"),
-            Message(
-                username,
-                "Writing Kotlin for UI seems so natural, Compose where have you been all my life?"
-            ),
-            Message(username, "Android Studio next version's name is Arctic Fox"),
-            Message(username, "Android Studio Arctic Fox tooling for Compose is top notch ^_^"),
-            Message(
-                username,
-                "I didn't know you can now run the emulator directly from Android Studio"
-            ),
-            Message(
-                username,
-                "Compose Previews are great to check quickly how a composable layout looks like"
-            ),
-            Message(
-                username,
-                "Previews are also interactive after enabling the experimental setting"
-            ),
-            Message(username, "Have you tried writing build.gradle with KTS?"),
-            Message(username, "Adding an extra message to demonstrate scrollability"),
-            Message(username, "Yet another one to add..."),
-            Message(username, "And another one..."),
-            Message(username, "This is the last one, at least for now...")
-        )
-    }
-}
-

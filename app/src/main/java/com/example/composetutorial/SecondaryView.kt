@@ -1,9 +1,12 @@
 package com.example.composetutorial
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Environment
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -24,6 +27,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -41,14 +46,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.core.content.edit
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +70,7 @@ fun SecondaryView(navController: NavHostController) {
     var username by remember { mutableStateOf(loadUsername(context)) }
     var imageUri by remember { mutableStateOf(loadImageUri(context)) }
     var notificationsAllowed by remember { mutableStateOf(loadNotificationPreference(context)) }
+    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -68,6 +82,30 @@ fun SecondaryView(navController: NavHostController) {
         } else {
             notificationsAllowed = false
             saveNotificationPreference(context, false)
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            cameraImageUri?.let { uri ->
+                saveImageUri(context, uri)
+                imageUri = uri
+            }
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            cameraImageUri = createImageFile(context)?.let { file ->
+                FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+            }
+            cameraImageUri?.let { uri -> cameraLauncher.launch(uri) }
+        } else {
+            Toast.makeText(context, "Camera permission not granted", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -111,33 +149,48 @@ fun SecondaryView(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "User:",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(16.dp)
+                text = username,
+                style = MaterialTheme.typography.titleLarge
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            imageUri?.let { uri ->
-                Image(
-                    painter = rememberAsyncImagePainter(uri),
-                    contentDescription = "Profile picture",
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(120.dp)
+            ) {
+                imageUri?.let { uri ->
+                    Image(
+                        painter = rememberAsyncImagePainter(uri),
+                        contentDescription = "Profile picture",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .clickable { imagePicker.launch("image/*") }
+                    )
+                } ?: Box(
                     modifier = Modifier
                         .size(120.dp)
                         .clip(CircleShape)
-                        .clickable { imagePicker.launch("image/*") }
-                )
-            } ?: Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black)
-                    .clickable { imagePicker.launch("image/*") },
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Tap to pick image", color = Color.White, textAlign = TextAlign.Center)
+                        .background(Color.Black)
+                        .clickable { imagePicker.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Tap to pick image", color = Color.White, textAlign = TextAlign.Center)
+                }
+                IconButton(
+                    onClick = {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(36.dp)
+                        .background(Color.Black, CircleShape)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_add_a_photo_24),
+                        contentDescription = "Take Picture",
+                        tint = Color.White
+                    )
+                }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
@@ -150,10 +203,9 @@ fun SecondaryView(navController: NavHostController) {
                     onDone = {
                         if (username.isBlank()) {
                             username = "Anonymous user"
-                            saveUsername(context, "Anonymous user")
-                        } else {
-                            saveUsername(context, username)
                         }
+                        saveUsername(context, username)
+
                     }
                 )
             )
@@ -178,11 +230,19 @@ fun SecondaryView(navController: NavHostController) {
                                 Intent(
                                     context,
                                     TemperatureMonitorService::class.java
+                                ).setComponent(
+                                    ComponentName(
+                                        context,
+                                        TemperatureMonitorService::class.java
+                                    )
                                 )
                             )
                         }
                     },
-                    colors = SwitchDefaults.colors(checkedTrackColor = Color.Black, uncheckedTrackColor = Color.Black)
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = Color.Black,
+                        uncheckedTrackColor = Color.Black
+                    )
                 )
             }
         }
@@ -203,12 +263,12 @@ fun loadNotificationPreference(context: Context): Boolean {
 
 fun saveNotificationPreference(context: Context, allowed: Boolean) {
     val sharedPref = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-    sharedPref.edit().putBoolean("notifications_allowed", allowed).apply()
+    sharedPref.edit { putBoolean("notifications_allowed", allowed) }
 }
 
-private fun saveUsername(context: Context, username: String) {
+fun saveUsername(context: Context, username: String) {
     val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-    prefs.edit().putString("username", username).apply()
+    prefs.edit { putString("username", username) }
 }
 
 fun loadUsername(context: Context): String {
@@ -218,13 +278,13 @@ fun loadUsername(context: Context): String {
 
 private fun saveImageUri(context: Context, uri: Uri) {
     val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-    prefs.edit().putString("image_uri", uri.toString()).apply()
+    prefs.edit { putString("image_uri", uri.toString()) }
 }
 
 fun loadImageUri(context: Context): Uri? {
     val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
     val uriString = prefs.getString("image_uri", null)
-    return if (!uriString.isNullOrEmpty()) Uri.parse(uriString) else null
+    return if (!uriString.isNullOrEmpty()) uriString.toUri() else null
 }
 
 private fun storageImage(context: Context, uri: Uri): Uri? {
@@ -245,6 +305,23 @@ private fun storageImage(context: Context, uri: Uri): Uri? {
         return null
     }
 }
+
+fun createImageFile(context: Context): File? {
+    val timestamp = SimpleDateFormat("yyyyMMdd_msys", Locale.getDefault()).format(Date())
+    val storageDirectory = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    return try {
+        File.createTempFile("IMG_${timestamp}_", ".jpg", storageDirectory)
+    } catch (e: IOException) {
+        e.printStackTrace()
+        null
+    }
+}
+
+
+
+
+
+
 
 
 
